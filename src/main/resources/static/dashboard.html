@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Ponto — Dashboard</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body class="dashboard-page">
+
+<!-- SIDEBAR -->
+<aside class="sidebar" id="sidebar">
+    <div class="sidebar-logo">
+        <span class="logo-icon">⏱</span>
+        <span class="logo-text">Ponto<span class="accent">App</span></span>
+    </div>
+
+    <nav class="sidebar-nav">
+        <a href="#" class="nav-item active" data-view="home" onclick="showView('home',this)">
+            <i class="bi bi-grid-1x2"></i> <span>Dashboard</span>
+        </a>
+        <a href="#" class="nav-item funcionario-only" data-view="ponto" onclick="showView('ponto',this)">
+            <i class="bi bi-fingerprint"></i> <span>Bater Ponto</span>
+        </a>
+        <a href="#" class="nav-item admin-only" data-view="funcionarios" onclick="showView('funcionarios',this)">
+            <i class="bi bi-people"></i> <span>Funcionários</span>
+        </a>
+        <a href="#" class="nav-item" data-view="relatorio" onclick="showView('relatorio',this)">
+            <i class="bi bi-bar-chart"></i> <span>Relatório</span>
+        </a>
+    </nav>
+
+    <div class="sidebar-footer">
+        <div class="user-info">
+            <div class="user-avatar" id="userAvatar">A</div>
+            <div>
+                <div class="user-name" id="userName">Carregando...</div>
+                <div class="user-role" id="userRole">--</div>
+            </div>
+        </div>
+        <button class="btn-logout" onclick="logout()" title="Sair">
+            <i class="bi bi-box-arrow-right"></i>
+        </button>
+    </div>
+</aside>
+
+<!-- TOGGLE SIDEBAR (mobile) -->
+<button class="sidebar-toggle" id="sidebarToggle" onclick="toggleSidebar()">
+    <i class="bi bi-list"></i>
+</button>
+
+<!-- MAIN CONTENT -->
+<main class="main-content" id="mainContent">
+
+    <!-- HEADER -->
+    <header class="top-bar">
+        <div>
+            <h2 class="page-title" id="pageTitle">Dashboard</h2>
+            <div class="page-subtitle" id="pageClock">--:--:--</div>
+        </div>
+        <div class="top-bar-right">
+            <div class="date-badge" id="pageDate">--</div>
+        </div>
+    </header>
+
+    <!-- VIEW: HOME (ADMIN) -->
+    <section id="view-home-admin" class="view admin-only" style="display:none;">
+        <div class="cards-row">
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="bi bi-people-fill"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Total de Funcionários</span>
+                    <span class="stat-value" id="a-totalFunc">--</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="bi bi-person-check-fill"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Com Ponto Aberto</span>
+                    <span class="stat-value" id="a-pontoAberto">--</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="bi bi-clock-fill"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Horas na Semana</span>
+                    <span class="stat-value" id="a-horasSemana">--</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="bi bi-calendar-check-fill"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Horas no Mês</span>
+                    <span class="stat-value" id="a-horasMes">--</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-row">
+            <div class="panel chart-panel">
+                <div class="panel-header">
+                    <h3><i class="bi bi-graph-up"></i> Horas Trabalhadas — Últimos 7 Dias</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartAdmin"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h3><i class="bi bi-trophy"></i> Top Horas Extras (Semana)</h3>
+                </div>
+                <div class="panel-body">
+                    <table class="data-table" id="tableTopExtras">
+                        <thead><tr><th>Funcionário</th><th>Total</th><th>Extras</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                    <div class="empty-state" id="emptyTopExtras" style="display:none;">
+                        <i class="bi bi-check-circle"></i> Nenhuma hora extra esta semana.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="panel mt-16">
+            <div class="panel-header">
+                <h3><i class="bi bi-activity"></i> Últimos Registros</h3>
+            </div>
+            <div class="panel-body">
+                <table class="data-table" id="tableUltimosRegistros">
+                    <thead><tr><th>Funcionário</th><th>Matrícula</th><th>Tipo</th><th>Horário</th></tr></thead>
+                    <tbody></tbody>
+                </table>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW: HOME (FUNCIONARIO) -->
+    <section id="view-home-func" class="view funcionario-only" style="display:none;">
+        <div class="status-banner" id="statusBanner">
+            <div class="status-dot" id="statusDot"></div>
+            <span id="statusText">Verificando...</span>
+        </div>
+
+        <div class="cards-row">
+            <div class="stat-card">
+                <div class="stat-icon purple"><i class="bi bi-clock-fill"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Horas na Semana</span>
+                    <span class="stat-value" id="f-horasSemana">--</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon blue"><i class="bi bi-calendar-check-fill"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Horas no Mês</span>
+                    <span class="stat-value" id="f-horasMes">--</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon green"><i class="bi bi-plus-circle-fill"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Horas Extras</span>
+                    <span class="stat-value accent" id="f-horasExtras">--</span>
+                </div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-icon orange"><i class="bi bi-person-badge-fill"></i></div>
+                <div class="stat-info">
+                    <span class="stat-label">Turno</span>
+                    <span class="stat-value" id="f-turno">--</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="content-row">
+            <div class="panel chart-panel">
+                <div class="panel-header">
+                    <h3><i class="bi bi-graph-up"></i> Minhas Horas — Últimos 7 Dias</h3>
+                </div>
+                <div class="chart-container">
+                    <canvas id="chartFunc"></canvas>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header">
+                    <h3><i class="bi bi-clock-history"></i> Histórico Recente</h3>
+                </div>
+                <div class="panel-body">
+                    <table class="data-table" id="tableHistorico">
+                        <thead><tr><th>Data</th><th>Entrada</th><th>Saída</th><th>Horas</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW: BATER PONTO -->
+    <section id="view-ponto" class="view funcionario-only" style="display:none;">
+        <div class="ponto-card glass">
+            <div class="ponto-clock" id="pontoClock">00:00:00</div>
+            <div class="ponto-date" id="pontoDate">--</div>
+
+            <div class="ponto-status-wrapper">
+                <div class="status-banner" id="statusBannerPonto">
+                    <div class="status-dot" id="statusDotPonto"></div>
+                    <span id="statusTextPonto">Verificando...</span>
+                </div>
+            </div>
+
+            <button class="btn-ponto" id="btnBaterPonto" onclick="baterPonto()">
+                <i class="bi bi-fingerprint"></i>
+                <span>Registrar Ponto</span>
+            </button>
+
+            <div id="pontoMsg" class="ponto-msg"></div>
+        </div>
+    </section>
+
+    <!-- VIEW: FUNCIONÁRIOS (ADMIN) -->
+    <section id="view-funcionarios" class="view admin-only" style="display:none;">
+        <div class="content-row">
+            <div class="panel">
+                <div class="panel-header">
+                    <h3><i class="bi bi-person-plus"></i> Cadastrar Funcionário</h3>
+                </div>
+                <div class="panel-body">
+                    <form id="formCadastro">
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Nome Completo</label>
+                                <input type="text" id="c-nome" placeholder="Ex: João Silva" required>
+                            </div>
+                            <div class="field-group">
+                                <label>Matrícula</label>
+                                <input type="text" id="c-matricula" placeholder="Ex: 12345" required>
+                            </div>
+                        </div>
+                        <div class="field-row">
+                            <div class="field-group">
+                                <label>Turno / Escala</label>
+                                <input type="text" id="c-turno" value="Comercial" placeholder="Ex: Comercial, Turno B">
+                            </div>
+                            <div class="field-group">
+                                <label>Carga Semanal (h)</label>
+                                <input type="number" id="c-carga" value="44" min="1" max="60">
+                            </div>
+                        </div>
+                        <div class="field-group">
+                            <label>Senha Inicial <small>(padrão: matrícula)</small></label>
+                            <input type="password" id="c-senha" placeholder="Deixe em branco para usar matrícula">
+                        </div>
+                        <div id="cadastroMsg" class="ponto-msg"></div>
+                        <button type="submit" class="btn-full">Cadastrar Funcionário</button>
+                    </form>
+                </div>
+            </div>
+
+            <div class="panel">
+                <div class="panel-header">
+                    <h3><i class="bi bi-people"></i> Funcionários Cadastrados</h3>
+                    <button class="btn-sm" onclick="carregarFuncionarios()">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                <div class="panel-body">
+                    <table class="data-table" id="tableFuncionarios">
+                        <thead><tr><th>Matrícula</th><th>Nome</th><th>Turno</th><th>Carga</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- VIEW: RELATÓRIO -->
+    <section id="view-relatorio" class="view" style="display:none;">
+        <div class="panel">
+            <div class="panel-header">
+                <h3><i class="bi bi-bar-chart-line"></i> Relatório de Horas</h3>
+            </div>
+            <div class="panel-body">
+                <form id="formRelatorio" class="relatorio-form">
+                    <div class="field-row">
+                        <div class="field-group admin-only">
+                            <label>Matrícula</label>
+                            <input type="text" id="r-matricula" placeholder="Deixe em branco para ver seus dados">
+                        </div>
+                        <div class="field-group">
+                            <label>Período</label>
+                            <select id="r-filtro" class="styled-select">
+                                <option value="week">Esta Semana</option>
+                                <option value="month">Este Mês</option>
+                            </select>
+                        </div>
+                        <div class="field-group" style="justify-content:flex-end; padding-top:24px;">
+                            <button type="submit" class="btn-full">Buscar</button>
+                        </div>
+                    </div>
+                </form>
+
+                <div id="relatorioResult" style="display:none;">
+                    <div class="relatorio-header">
+                        <div>
+                            <h3 id="r-nome">--</h3>
+                            <p id="r-info">--</p>
+                        </div>
+                        <div class="relatorio-cards">
+                            <div class="mini-card">
+                                <span>Total</span>
+                                <strong id="r-total">--</strong>
+                            </div>
+                            <div class="mini-card accent-card">
+                                <span>Extras</span>
+                                <strong id="r-extras">--</strong>
+                            </div>
+                        </div>
+                    </div>
+                    <table class="data-table mt-16" id="tableRelatorio">
+                        <thead><tr><th>Data</th><th>Entrada</th><th>Saída</th><th>Trabalhadas</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+</main>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="js/api.js"></script>
+<script src="js/dashboard.js"></script>
+</body>
+</html>
