@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registro de Ponto</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+    <div class="background-shapes">
+        <div class="shape shape-1"></div>
+        <div class="shape shape-2"></div>
+    </div>
+    <div class="container glass-panel">
+        <header>
+            <h1>Registro <span class="highlight">de Ponto</span></h1>
+            <div class="clock" id="clock">00:00:00</div>
+            <div class="date" id="date">Carregando data...</div>
+        </header>
+
+        <main>
+            <div class="tabs">
+                <button class="tab-btn active" onclick="showTab('clock-tab')">Bater Ponto</button>
+                <button class="tab-btn" onclick="showTab('register-tab')">Novo Func.</button>
+                <button class="tab-btn" onclick="showTab('dashboard-tab')">Meu Painel</button>
+            </div>
+
+            <!-- BATER PONTO -->
+            <section id="clock-tab" class="tab-content active">
+                <form id="clockForm">
+                    <div class="form-group">
+                        <label for="employeeNumber">Matrícula</label>
+                        <input type="text" id="employeeNumber" placeholder="Digite sua matrícula" required>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Registrar</button>
+                </form>
+                <div id="clockMessage" class="message"></div>
+                
+                <h3 class="recent-title">Meus Registros Recentes</h3>
+                <button type="button" class="btn btn-secondary" onclick="fetchRecords()">Ver Extrato Simples</button>
+                <ul id="recordsList" class="records-list"></ul>
+            </section>
+
+            <!-- NOVO FUNCIONARIO -->
+            <section id="register-tab" class="tab-content">
+                <form id="registerForm">
+                    <div class="form-group">
+                        <label for="newEmpName">Nome Completo</label>
+                        <input type="text" id="newEmpName" placeholder="Ex: João Silva" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="newEmpNumber">Nova Matrícula</label>
+                        <input type="text" id="newEmpNumber" placeholder="Ex: 12345" required>
+                    </div>
+                    <div class="form-group" style="display: flex; gap: 10px;">
+                        <div style="flex: 1;">
+                            <label for="newEmpShift">Turno/Escala</label>
+                            <input type="text" id="newEmpShift" placeholder="Ex: Comercial, Turno B" required value="Comercial">
+                        </div>
+                        <div style="flex: 1;">
+                            <label for="newEmpWorkload">Carga Semanal (h)</label>
+                            <input type="number" id="newEmpWorkload" placeholder="Ex: 44" required value="44">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary">Cadastrar</button>
+                </form>
+                <div id="registerMessage" class="message"></div>
+            </section>
+
+            <!-- MEU PAINEL (DASHBOARD) -->
+            <section id="dashboard-tab" class="tab-content">
+                <form id="dashboardForm">
+                    <div class="form-group" style="display: flex; gap: 10px;">
+                        <input type="text" id="dashEmpNumber" placeholder="Sua Matrícula" required style="flex: 2;">
+                        <select id="dashFilter" style="flex: 1;" class="styled-select">
+                            <option value="week">Esta Semana</option>
+                            <option value="month">Este Mês</option>
+                        </select>
+                    </div>
+                    <button type="submit" class="btn btn-secondary">Buscar Resumo</button>
+                </form>
+                <div id="dashMessage" class="message"></div>
+                
+                <div id="dashContent" style="display: none; margin-top: 20px;">
+                    <div class="profile-header">
+                        <h3 id="dashName">Nome</h3>
+                        <p id="dashInfo">Turno: -- | Carga Semanal: --</p>
+                    </div>
+                    <div class="cards-grid">
+                        <div class="card">
+                            <span>Horas Totais</span>
+                            <h2 id="dashTotalHours">0.0</h2>
+                        </div>
+                        <div class="card overtime-card">
+                            <span>Horas Extras</span>
+                            <h2 id="dashOvertime">0.0</h2>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </main>
+    </div>
+    <script src="js/app.js"></script>
+</body>
+</html>
