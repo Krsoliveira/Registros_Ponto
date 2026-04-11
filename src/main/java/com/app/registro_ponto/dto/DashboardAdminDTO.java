@@ -49,7 +49,9 @@ public class DashboardAdminDTO {
         private String nomeFuncionario;
         private String matricula;
         private String tipo;
+        private String tipoLabel;
         private String horario;
+        private String nomeLocal;
 
         public String getNomeFuncionario() { return nomeFuncionario; }
         public void setNomeFuncionario(String nomeFuncionario) { this.nomeFuncionario = nomeFuncionario; }
@@ -60,8 +62,14 @@ public class DashboardAdminDTO {
         public String getTipo() { return tipo; }
         public void setTipo(String tipo) { this.tipo = tipo; }
 
+        public String getTipoLabel() { return tipoLabel; }
+        public void setTipoLabel(String tipoLabel) { this.tipoLabel = tipoLabel; }
+
         public String getHorario() { return horario; }
         public void setHorario(String horario) { this.horario = horario; }
+
+        public String getNomeLocal() { return nomeLocal; }
+        public void setNomeLocal(String nomeLocal) { this.nomeLocal = nomeLocal; }
     }
 
     public int getTotalFuncionarios() { return totalFuncionarios; }

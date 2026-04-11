@@ -12,19 +12,37 @@ import java.util.Optional;
 @Repository
 public interface RegistroPontoRepositorio extends JpaRepository<RegistroPonto, Long> {
 
-    Optional<RegistroPonto> findFirstByFuncionarioIdAndHoraSaidaIsNullOrderByHoraEntradaDesc(Long funcionarioId);
+    List<RegistroPonto> findByFuncionarioIdOrderByHoraMarcacaoDesc(Long funcionarioId);
 
-    List<RegistroPonto> findByFuncionarioIdOrderByHoraEntradaDesc(Long funcionarioId);
-
-    List<RegistroPonto> findByFuncionarioIdAndHoraEntradaBetweenOrderByHoraEntradaDesc(
+    List<RegistroPonto> findByFuncionarioIdAndHoraMarcacaoBetweenOrderByHoraMarcacaoAsc(
             Long funcionarioId, LocalDateTime inicio, LocalDateTime fim);
 
-    @Query("SELECT r FROM RegistroPonto r WHERE r.horaSaida IS NULL ORDER BY r.horaEntrada DESC")
-    List<RegistroPonto> findAllComPontoAberto();
+    List<RegistroPonto> findByFuncionarioIdAndHoraMarcacaoBetweenOrderByHoraMarcacaoDesc(
+            Long funcionarioId, LocalDateTime inicio, LocalDateTime fim);
 
-    @Query("SELECT r FROM RegistroPonto r WHERE r.horaEntrada BETWEEN :inicio AND :fim ORDER BY r.horaEntrada DESC")
+    @Query("SELECT r FROM RegistroPonto r WHERE r.horaMarcacao BETWEEN :inicio AND :fim ORDER BY r.horaMarcacao DESC")
     List<RegistroPonto> findAllByPeriodo(LocalDateTime inicio, LocalDateTime fim);
 
-    @Query("SELECT COUNT(DISTINCT r.funcionario.id) FROM RegistroPonto r WHERE r.horaSaida IS NULL")
-    long countFuncionariosComPontoAberto();
+    @Query("""
+        SELECT r FROM RegistroPonto r
+        WHERE r.funcionario.id = :funcionarioId
+        AND r.horaMarcacao = (
+            SELECT MAX(r2.horaMarcacao) FROM RegistroPonto r2
+            WHERE r2.funcionario.id = :funcionarioId
+            AND r2.horaMarcacao BETWEEN :inicio AND :fim
+        )
+    """)
+    Optional<RegistroPonto> findUltimaMarcacaoDoDia(Long funcionarioId, LocalDateTime inicio, LocalDateTime fim);
+
+    @Query("""
+        SELECT COUNT(DISTINCT r.funcionario.id) FROM RegistroPonto r
+        WHERE r.horaMarcacao BETWEEN :inicio AND :fim
+        AND r.tipoMarcacao IN ('ENTRADA', 'RETORNO_INTERVALO', 'RETORNO_INTERMEDIARIO')
+        AND r.funcionario.id NOT IN (
+            SELECT r2.funcionario.id FROM RegistroPonto r2
+            WHERE r2.horaMarcacao BETWEEN :inicio AND :fim
+            AND r2.tipoMarcacao = 'SAIDA_FINAL'
+        )
+    """)
+    long countFuncionariosComPontoAberto(LocalDateTime inicio, LocalDateTime fim);
 }
