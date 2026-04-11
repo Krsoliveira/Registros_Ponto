@@ -208,10 +208,22 @@ async function carregarTiposPonto() {
 
     try {
         const res = await API.get('/ponto/tipos-disponiveis');
-        const d   = await res.json();
+        if (!res.ok) {
+            const msg = await res.text();
+            document.getElementById('statusTextPonto').textContent = 'Não disponível';
+            document.getElementById('tiposBtns').innerHTML =
+                `<div class="empty-state"><i class="bi bi-exclamation-triangle"></i><br>${msg || 'Erro ao carregar marcações.'}</div>`;
+            return;
+        }
+        const d = await res.json();
         setStatusBanner(d.dentroDoTrabalho, 'statusBannerPonto', 'statusDotPonto', 'statusTextPonto');
         renderTiposBtns(d);
-    } catch(e) { console.error(e); }
+    } catch(e) {
+        console.error(e);
+        document.getElementById('statusTextPonto').textContent = 'Erro de conexão';
+        document.getElementById('tiposBtns').innerHTML =
+            '<div class="empty-state"><i class="bi bi-wifi-off"></i><br>Erro de conexão com o servidor.</div>';
+    }
 }
 
 function renderTiposBtns(d) {
@@ -275,7 +287,8 @@ function solicitarGeolocalizacao() {
     geoStatus.className = 'geo-status geo-loading';
 
     if (!navigator.geolocation) {
-        geoStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Geolocalização não suportada.';
+        geoStatus.innerHTML = '<i class="bi bi-exclamation-triangle"></i> Geolocalização não suportada neste navegador.<br>'
+            + '<button class="btn-geo-skip" onclick="prosseguirSemGeo()">Prosseguir sem GPS</button>';
         geoStatus.className = 'geo-status geo-error';
         return;
     }
@@ -288,11 +301,21 @@ function solicitarGeolocalizacao() {
             verificarPodeConfirmar();
         },
         () => {
-            geoStatus.innerHTML = '<i class="bi bi-geo-alt-fill" style="color:var(--danger)"></i> Permissão de localização negada. Habilite para registrar.';
+            geoStatus.innerHTML = '<i class="bi bi-geo-alt-fill"></i> Permissão de localização negada.<br>'
+                + '<button class="btn-geo-retry" onclick="solicitarGeolocalizacao()"><i class="bi bi-arrow-clockwise"></i> Tentar novamente</button>'
+                + '<button class="btn-geo-skip" onclick="prosseguirSemGeo()">Prosseguir sem GPS</button>';
             geoStatus.className = 'geo-status geo-error';
         },
         { timeout: 10000, enableHighAccuracy: true }
     );
+}
+
+function prosseguirSemGeo() {
+    geoCoords = { latitude: null, longitude: null };
+    const geoStatus = document.getElementById('geoStatus');
+    geoStatus.innerHTML = '<i class="bi bi-geo-alt"></i> Registro sem localização GPS';
+    geoStatus.className = 'geo-status geo-skip';
+    verificarPodeConfirmar();
 }
 
 function verificarPodeConfirmar() {

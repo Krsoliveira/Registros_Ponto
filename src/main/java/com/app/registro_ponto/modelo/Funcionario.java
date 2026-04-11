@@ -3,6 +3,9 @@ package com.app.registro_ponto.modelo;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import org.hibernate.annotations.CreationTimestamp;
+
+import java.time.LocalDate;
 
 @Entity
 @Table(name = "funcionarios")
@@ -30,6 +33,10 @@ public class Funcionario {
     @Column(nullable = false)
     private boolean ativo = true;
 
+    @CreationTimestamp
+    @Column(name = "data_cadastro", updatable = false)
+    private LocalDate dataCadastro;
+
     public Funcionario() {}
 
     public Funcionario(String matricula, String nome, String turno, Integer cargaHorariaSemanal) {
@@ -56,4 +63,7 @@ public class Funcionario {
 
     public boolean isAtivo() { return ativo; }
     public void setAtivo(boolean ativo) { this.ativo = ativo; }
+
+    public LocalDate getDataCadastro() { return dataCadastro; }
+    public void setDataCadastro(LocalDate dataCadastro) { this.dataCadastro = dataCadastro; }
 }

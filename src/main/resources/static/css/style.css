@@ -569,6 +569,18 @@ select option { background: var(--bg-2); }
 .geo-loading { color: var(--text-muted); background: rgba(255,255,255,0.04); }
 .geo-ok      { color: var(--success);    background: rgba(74,222,128,0.1);   }
 .geo-error   { color: var(--danger);     background: rgba(248,113,113,0.1);  }
+.geo-skip    { color: #f59e0b;           background: rgba(245,158,11,0.1);   }
+.geo-error .btn-geo-retry,
+.geo-error .btn-geo-skip,
+.geo-skip  .btn-geo-skip {
+    display: inline-block; margin-top: 8px; padding: 5px 12px;
+    border-radius: 8px; border: 1px solid currentColor; background: transparent;
+    color: inherit; font-family: inherit; font-size: 0.8rem; cursor: pointer;
+    margin-right: 6px; transition: opacity 0.2s;
+}
+.geo-error .btn-geo-retry:hover,
+.geo-error .btn-geo-skip:hover,
+.geo-skip  .btn-geo-skip:hover { opacity: 0.7; }
 
 /* Botões de ponto */
 .ponto-actions { display: flex; flex-direction: column; gap: 10px; margin-top: 16px; }
