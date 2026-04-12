@@ -40,16 +40,38 @@ public class BancoHorasServico {
         Funcionario f = funcionarioRepositorio.findByMatricula(matricula)
                 .orElseThrow(() -> new IllegalArgumentException("Funcionário não encontrado."));
 
-        // Calcula desde o início do mês atual
-        LocalDateTime inicio = LocalDate.now().withDayOfMonth(1).atStartOfDay();
-        LocalDateTime fim    = LocalDateTime.now();
+        LocalDateTime fim = LocalDateTime.now();
+
+        // Busca o primeiro registro de ponto do funcionário (qualquer data)
+        List<RegistroPonto> todosRegistros = registroPontoRepositorio
+                .findByFuncionarioIdAndHoraMarcacaoBetweenOrderByHoraMarcacaoAsc(
+                        f.getId(), LocalDateTime.of(2000, 1, 1, 0, 0), fim);
+
+        // Sem nenhum registro: banco de horas zerado
+        if (todosRegistros.isEmpty()) {
+            BancoHorasDTO dto = new BancoHorasDTO();
+            dto.setSaldo(0.0);
+            dto.setSaldoFormatado("0h");
+            dto.setTotalTrabalhado(0.0);
+            dto.setTotalEsperado(0.0);
+            dto.setTotalCompensado(0.0);
+            dto.setCompensacoes(List.of());
+            return dto;
+        }
+
+        // Início do cálculo = dia do primeiro ponto batido (dentro do mês atual)
+        LocalDate inicioMes      = LocalDate.now().withDayOfMonth(1);
+        LocalDate primeiroPonto  = todosRegistros.get(0).getHoraMarcacao().toLocalDate();
+        LocalDate inicioEfetivo  = primeiroPonto.isAfter(inicioMes) ? primeiroPonto : inicioMes;
+
+        LocalDateTime inicio = inicioEfetivo.atStartOfDay();
 
         List<RegistroPonto> marcacoes = registroPontoRepositorio
                 .findByFuncionarioIdAndHoraMarcacaoBetweenOrderByHoraMarcacaoAsc(f.getId(), inicio, fim);
 
         double totalTrabalhado = registroPontoServico.calcularTotalHoras(marcacoes);
 
-        int diasUteis = contarDiasUteis(inicio.toLocalDate(), fim.toLocalDate());
+        int diasUteis = contarDiasUteis(inicioEfetivo, fim.toLocalDate());
         double horasPorDia   = f.getCargaHorariaSemanal() / 5.0;
         double totalEsperado = Math.round(diasUteis * horasPorDia * 100.0) / 100.0;
 
