@@ -1,4 +1,8 @@
 HELP.md
+
+# Memória local para agentes (não versionar)
+AGENT_MEMORY.md
+
 target/
 .mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
