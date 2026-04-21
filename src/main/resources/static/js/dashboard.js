@@ -6,6 +6,7 @@ let chartAdminInstance = null;
 let chartFuncInstance  = null;
 let tipoSelecionado    = null;
 let geoCoords          = null;
+let relatorioDebounceTimer = null;
 
 // ── INIT ─────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
@@ -86,6 +87,12 @@ function showView(viewName, linkEl) {
         carregarTabelaCargos();
     } else if (viewName === 'relatorio') {
         document.getElementById('view-relatorio').style.display = 'block';
+        if (user.perfil !== 'ADMIN') {
+            buscarRelatorio();
+        } else {
+            const m = document.getElementById('r-matricula');
+            if (m && m.value.trim()) buscarRelatorio();
+        }
     }
 
     if (window.innerWidth <= 768) toggleSidebar();
@@ -587,37 +594,130 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 // ── RELATÓRIO ────────────────────────────────────────────────
+function relatorioEscapeHtml(text) {
+    if (text == null) return '';
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+}
+
+function limparRelatorioErro() {
+    const el = document.getElementById('relatorioMsg');
+    if (!el) return;
+    el.textContent = '';
+    el.className = 'ponto-msg';
+    el.style.display = 'none';
+}
+
+function mostrarRelatorioErro(msg) {
+    const el = document.getElementById('relatorioMsg');
+    if (!el) return;
+    el.textContent = msg;
+    el.className = 'ponto-msg error';
+    el.style.display = 'block';
+}
+
+function ocultarResultadoRelatorio() {
+    const box = document.getElementById('relatorioResult');
+    if (box) box.style.display = 'none';
+}
+
+function agendarBuscaRelatorio() {
+    if (relatorioDebounceTimer) clearTimeout(relatorioDebounceTimer);
+    relatorioDebounceTimer = setTimeout(() => buscarRelatorio(), 420);
+}
+
+async function buscarRelatorio() {
+    const user = API.getUser();
+    if (!user) return;
+
+    const filtro = document.getElementById('r-filtro').value;
+    let url = `/ponto/resumo?filtro=${encodeURIComponent(filtro)}`;
+
+    if (user.perfil === 'ADMIN') {
+        const matInput = document.getElementById('r-matricula');
+        const matricula = matInput ? matInput.value.trim() : '';
+        if (!matricula) {
+            mostrarRelatorioErro('Digite a matrícula do funcionário. O relatório atualiza enquanto você digita.');
+            ocultarResultadoRelatorio();
+            document.querySelector('#tableRelatorio tbody').innerHTML = '';
+            return;
+        }
+        url += `&matricula=${encodeURIComponent(matricula)}`;
+    }
+
+    limparRelatorioErro();
+
+    try {
+        const res = await API.get(url);
+        const text = await res.text();
+        if (!res.ok) {
+            mostrarRelatorioErro(text || 'Não foi possível carregar o relatório.');
+            ocultarResultadoRelatorio();
+            document.querySelector('#tableRelatorio tbody').innerHTML = '';
+            return;
+        }
+        let data;
+        try {
+            data = JSON.parse(text);
+        } catch (e) {
+            mostrarRelatorioErro('Resposta inválida do servidor.');
+            ocultarResultadoRelatorio();
+            return;
+        }
+
+        document.getElementById('r-nome').textContent = data.nomeFuncionario;
+        document.getElementById('r-info').textContent = `Turno: ${data.turno} | Carga: ${data.cargaHorariaSemanal}h/sem`;
+        document.getElementById('r-total').textContent = data.totalHoras.toFixed(1) + 'h';
+        document.getElementById('r-extras').textContent = data.horasExtras > 0 ? '+' + data.horasExtras.toFixed(1) + 'h' : '0h';
+
+        const saldoEl = document.getElementById('r-saldo');
+        saldoEl.textContent = data.saldoBancoHoras > 0
+            ? '+' + data.saldoBancoHoras.toFixed(1) + 'h'
+            : data.saldoBancoHoras.toFixed(1) + 'h';
+        saldoEl.style.color = data.saldoBancoHoras >= 0 ? 'var(--success)' : 'var(--danger)';
+
+        const tipoColors = { ENTRADA:'badge-in', SAIDA_INTERVALO:'badge-out', RETORNO_INTERVALO:'badge-blue',
+            SAIDA_INTERMEDIARIA:'badge-warn', RETORNO_INTERMEDIARIO:'badge-blue', SAIDA_FINAL:'badge-out' };
+        document.querySelector('#tableRelatorio tbody').innerHTML = (data.registros || []).map(r => `
+            <tr>
+                <td>${relatorioEscapeHtml(r.data)}</td>
+                <td>${relatorioEscapeHtml(r.hora)}</td>
+                <td><span class="badge ${tipoColors[r.tipoMarcacao]||''}">${relatorioEscapeHtml(r.tipoLabel)}</span></td>
+                <td style="color:var(--text-muted)">${relatorioEscapeHtml(r.nomeLocal) || '--'}</td>
+            </tr>`).join('');
+
+        document.getElementById('relatorioResult').style.display = 'block';
+    } catch (e) {
+        console.error(e);
+        mostrarRelatorioErro('Erro de conexão.');
+        ocultarResultadoRelatorio();
+    }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
     const form = document.getElementById('formRelatorio');
     if (!form) return;
-    form.addEventListener('submit', async (e) => {
+    form.addEventListener('submit', (e) => {
         e.preventDefault();
-        const filtro = document.getElementById('r-filtro').value;
-        try {
-            const res  = await API.get(`/ponto/resumo?filtro=${filtro}`);
-            const data = await res.json();
-            document.getElementById('r-nome').textContent  = data.nomeFuncionario;
-            document.getElementById('r-info').textContent  = `Turno: ${data.turno} | Carga: ${data.cargaHorariaSemanal}h/sem`;
-            document.getElementById('r-total').textContent  = data.totalHoras.toFixed(1) + 'h';
-            document.getElementById('r-extras').textContent = data.horasExtras > 0 ? '+' + data.horasExtras.toFixed(1) + 'h' : '0h';
-
-            const saldoEl = document.getElementById('r-saldo');
-            saldoEl.textContent = data.saldoBancoHoras > 0
-                ? '+' + data.saldoBancoHoras.toFixed(1) + 'h'
-                : data.saldoBancoHoras.toFixed(1) + 'h';
-            saldoEl.style.color = data.saldoBancoHoras >= 0 ? 'var(--success)' : 'var(--danger)';
-
-            const tipoColors = { ENTRADA:'badge-in', SAIDA_INTERVALO:'badge-out', RETORNO_INTERVALO:'badge-blue',
-                SAIDA_INTERMEDIARIA:'badge-warn', RETORNO_INTERMEDIARIO:'badge-blue', SAIDA_FINAL:'badge-out' };
-            document.querySelector('#tableRelatorio tbody').innerHTML = (data.registros||[]).map(r => `
-                <tr>
-                    <td>${r.data}</td>
-                    <td>${r.hora}</td>
-                    <td><span class="badge ${tipoColors[r.tipoMarcacao]||''}">${r.tipoLabel}</span></td>
-                    <td style="color:var(--text-muted)">${r.nomeLocal||'--'}</td>
-                </tr>`).join('');
-
-            document.getElementById('relatorioResult').style.display = 'block';
-        } catch(e) { console.error(e); }
+        if (relatorioDebounceTimer) clearTimeout(relatorioDebounceTimer);
+        buscarRelatorio();
     });
+
+    const matInput = document.getElementById('r-matricula');
+    if (matInput) {
+        matInput.addEventListener('input', () => {
+            const u = API.getUser();
+            if (!u || u.perfil !== 'ADMIN') return;
+            agendarBuscaRelatorio();
+        });
+    }
+
+    const filtroSel = document.getElementById('r-filtro');
+    if (filtroSel) {
+        filtroSel.addEventListener('change', () => {
+            if (relatorioDebounceTimer) clearTimeout(relatorioDebounceTimer);
+            buscarRelatorio();
+        });
+    }
 });
