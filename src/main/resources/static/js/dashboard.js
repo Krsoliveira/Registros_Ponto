@@ -66,7 +66,7 @@ function showView(viewName, linkEl) {
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     if (linkEl) linkEl.classList.add('active');
 
-    const titles = { home:'Dashboard', ponto:'Bater Ponto', banco:'Banco de Horas', funcionarios:'Funcionários', relatorio:'Relatório' };
+    const titles = { home:'Dashboard', ponto:'Bater Ponto', banco:'Banco de Horas', funcionarios:'Funcionários', cargos:'Cargos', relatorio:'Relatório' };
     document.getElementById('pageTitle').textContent = titles[viewName] || 'Dashboard';
 
     if (viewName === 'home') {
@@ -77,7 +77,13 @@ function showView(viewName, linkEl) {
     } else if (viewName === 'banco') {
         document.getElementById('view-banco').style.display = 'block'; carregarBancoHoras();
     } else if (viewName === 'funcionarios') {
-        document.getElementById('view-funcionarios').style.display = 'block'; carregarFuncionarios();
+        document.getElementById('view-funcionarios').style.display = 'block';
+        preencherSelectCargosFuncionario();
+        carregarFuncionarios();
+    } else if (viewName === 'cargos') {
+        document.getElementById('view-cargos').style.display = 'block';
+        preencherGruposNoFormCargo();
+        carregarTabelaCargos();
     } else if (viewName === 'relatorio') {
         document.getElementById('view-relatorio').style.display = 'block';
     }
@@ -436,6 +442,94 @@ document.addEventListener('DOMContentLoaded', () => {
     });
 });
 
+// ── CARGOS (ADMIN) ───────────────────────────────────────────
+function escapeHtml(text) {
+    if (text == null) return '';
+    const d = document.createElement('div');
+    d.textContent = text;
+    return d.innerHTML;
+}
+
+async function preencherGruposNoFormCargo() {
+    const sel = document.getElementById('cargo-grupo');
+    if (!sel) return;
+    try {
+        const res = await API.get('/cargos/grupos');
+        if (!res.ok) return;
+        const grupos = await res.json();
+        sel.innerHTML = grupos.map(g => `<option value="${g.codigo}">${escapeHtml(g.nome)}</option>`).join('');
+    } catch (e) { console.error(e); }
+}
+
+async function preencherSelectCargosFuncionario() {
+    const sel = document.getElementById('c-cargo');
+    if (!sel) return;
+    const atual = sel.value;
+    try {
+        const res = await API.get('/cargos');
+        if (!res.ok) return;
+        const lista = await res.json();
+        sel.innerHTML = '<option value="">— Sem cargo —</option>' + lista.map(c =>
+            `<option value="${c.id}">${escapeHtml(c.titulo)} (${escapeHtml(c.grupoNome)})</option>`
+        ).join('');
+        if (atual) sel.value = atual;
+    } catch (e) { console.error(e); }
+}
+
+async function carregarTabelaCargos() {
+    const tbody = document.querySelector('#tableCargos tbody');
+    const empty = document.getElementById('emptyCargos');
+    if (!tbody) return;
+    try {
+        const res = await API.get('/cargos');
+        if (!res.ok) return;
+        const lista = await res.json();
+        if (!lista.length) {
+            tbody.innerHTML = '';
+            if (empty) empty.style.display = 'block';
+            return;
+        }
+        if (empty) empty.style.display = 'none';
+        tbody.innerHTML = lista.map(c => `
+            <tr>
+                <td><strong>${escapeHtml(c.titulo)}</strong></td>
+                <td><span class="badge badge-blue">${escapeHtml(c.grupoNome)}</span></td>
+            </tr>`).join('');
+    } catch (e) { console.error(e); }
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+    const formCargo = document.getElementById('formCargo');
+    if (!formCargo) return;
+    formCargo.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const msgDiv = document.getElementById('cargoMsg');
+        const btn = formCargo.querySelector('button[type=submit]');
+        const titulo = document.getElementById('cargo-titulo').value.trim();
+        const grupo = document.getElementById('cargo-grupo').value;
+        btn.disabled = true;
+        msgDiv.textContent = 'Salvando...';
+        msgDiv.className = 'ponto-msg';
+        try {
+            const res = await API.post('/cargos', { titulo, grupo });
+            if (res.ok) {
+                msgDiv.textContent = 'Cargo cadastrado!';
+                msgDiv.classList.add('success');
+                document.getElementById('cargo-titulo').value = '';
+                carregarTabelaCargos();
+            } else {
+                msgDiv.textContent = await res.text();
+                msgDiv.classList.add('error');
+            }
+        } catch (err) {
+            msgDiv.textContent = 'Erro de conexão.';
+            msgDiv.classList.add('error');
+        } finally {
+            btn.disabled = false;
+        }
+    });
+});
+
 // ── FUNCIONÁRIOS (ADMIN) ─────────────────────────────────────
 async function carregarFuncionarios() {
     try {
@@ -444,9 +538,10 @@ async function carregarFuncionarios() {
         const lista = await res.json();
         document.querySelector('#tableFuncionarios tbody').innerHTML = lista.map(f => `
             <tr>
-                <td>${f.matricula}</td>
-                <td><strong>${f.nome}</strong></td>
-                <td>${f.turno}</td>
+                <td>${escapeHtml(f.matricula)}</td>
+                <td><strong>${escapeHtml(f.nome)}</strong></td>
+                <td>${f.cargo ? `${escapeHtml(f.cargo.titulo)} <small style="color:var(--text-muted)">(${escapeHtml(f.cargo.grupoNome)})</small>` : '—'}</td>
+                <td>${escapeHtml(f.turno)}</td>
                 <td>${f.cargaHorariaSemanal}h/sem</td>
             </tr>`).join('');
     } catch(e) {}
@@ -463,13 +558,16 @@ document.addEventListener('DOMContentLoaded', () => {
         msgDiv.textContent = 'Cadastrando...';
         msgDiv.className   = 'ponto-msg';
         try {
-            const res = await API.post('/funcionarios', {
+            const cargoVal = document.getElementById('c-cargo').value;
+            const body = {
                 nome: document.getElementById('c-nome').value.trim(),
                 matricula: document.getElementById('c-matricula').value.trim(),
                 turno: document.getElementById('c-turno').value.trim(),
                 cargaHorariaSemanal: parseInt(document.getElementById('c-carga').value) || 44,
                 senha: document.getElementById('c-senha').value || null
-            });
+            };
+            if (cargoVal) body.cargoId = parseInt(cargoVal, 10);
+            const res = await API.post('/funcionarios', body);
             if (res.ok) {
                 const f = await res.json();
                 msgDiv.textContent = `"${f.nome}" cadastrado com sucesso!`;
@@ -477,6 +575,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 form.reset();
                 document.getElementById('c-turno').value = 'Comercial';
                 document.getElementById('c-carga').value = '44';
+                document.getElementById('c-cargo').value = '';
                 carregarFuncionarios();
             } else {
                 msgDiv.textContent = await res.text();

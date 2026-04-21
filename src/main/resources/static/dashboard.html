@@ -32,6 +32,9 @@
         <a class="nav-item admin-only" data-view="funcionarios" onclick="showView('funcionarios',this)">
             <i class="bi bi-people"></i><span>Funcionários</span>
         </a>
+        <a class="nav-item admin-only" data-view="cargos" onclick="showView('cargos',this)">
+            <i class="bi bi-briefcase"></i><span>Cargos</span>
+        </a>
         <a class="nav-item" data-view="relatorio" onclick="showView('relatorio',this)">
             <i class="bi bi-bar-chart"></i><span>Relatório</span>
         </a>
@@ -257,6 +260,10 @@
                             <div class="field-group"><label>Turno / Escala</label><input type="text" id="c-turno" value="Comercial"></div>
                             <div class="field-group"><label>Carga Semanal (h)</label><input type="number" id="c-carga" value="44" min="1" max="60"></div>
                         </div>
+                        <div class="field-group">
+                            <label>Cargo <small>(opcional — cadastre em Cargos)</small></label>
+                            <select id="c-cargo" class="styled-select"><option value="">— Sem cargo —</option></select>
+                        </div>
                         <div class="field-group"><label>Senha Inicial <small>(padrão: matrícula)</small></label>
                             <input type="password" id="c-senha" placeholder="Deixe em branco para usar matrícula"></div>
                         <div id="cadastroMsg" class="ponto-msg"></div>
@@ -270,9 +277,46 @@
                 </div>
                 <div class="panel-body">
                     <table class="data-table" id="tableFuncionarios">
-                        <thead><tr><th>Matrícula</th><th>Nome</th><th>Turno</th><th>Carga</th></tr></thead>
+                        <thead><tr><th>Matrícula</th><th>Nome</th><th>Cargo</th><th>Turno</th><th>Carga</th></tr></thead>
                         <tbody></tbody>
                     </table>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- ── CARGOS (ADMIN) ───────────────────────────────────── -->
+    <section id="view-cargos" class="view admin-only" style="display:none;">
+        <div class="content-row">
+            <div class="panel">
+                <div class="panel-header"><h3><i class="bi bi-plus-square"></i> Novo cargo</h3></div>
+                <div class="panel-body">
+                    <form id="formCargo">
+                        <div class="field-group">
+                            <label>Grupo global</label>
+                            <select id="cargo-grupo" class="styled-select" required></select>
+                        </div>
+                        <div class="field-group">
+                            <label>Título do cargo</label>
+                            <input type="text" id="cargo-titulo" placeholder="Ex: Coordenador de Produção" maxlength="120" required>
+                        </div>
+                        <div id="cargoMsg" class="ponto-msg"></div>
+                        <button type="submit" class="btn-full">Cadastrar cargo</button>
+                    </form>
+                </div>
+            </div>
+            <div class="panel">
+                <div class="panel-header"><h3><i class="bi bi-list-ul"></i> Cargos cadastrados</h3>
+                    <button class="btn-sm" onclick="carregarTabelaCargos()"><i class="bi bi-arrow-clockwise"></i></button>
+                </div>
+                <div class="panel-body">
+                    <table class="data-table" id="tableCargos">
+                        <thead><tr><th>Título</th><th>Grupo</th></tr></thead>
+                        <tbody></tbody>
+                    </table>
+                    <div class="empty-state" id="emptyCargos" style="display:none;">
+                        <i class="bi bi-inbox"></i> Nenhum cargo cadastrado. Crie o primeiro ao lado.
+                    </div>
                 </div>
             </div>
         </div>
