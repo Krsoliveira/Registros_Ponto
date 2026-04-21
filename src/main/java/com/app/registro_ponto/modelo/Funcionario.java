@@ -1,5 +1,6 @@
 package com.app.registro_ponto.modelo;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import jakarta.persistence.*;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -9,6 +10,7 @@ import java.time.LocalDate;
 
 @Entity
 @Table(name = "funcionarios")
+@JsonIgnoreProperties({"hibernateLazyInitializer", "handler"})
 public class Funcionario {
 
     @Id
@@ -36,6 +38,10 @@ public class Funcionario {
     @CreationTimestamp
     @Column(name = "data_cadastro", updatable = false)
     private LocalDate dataCadastro;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "cargo_id")
+    private Cargo cargo;
 
     public Funcionario() {}
 
@@ -66,4 +72,7 @@ public class Funcionario {
 
     public LocalDate getDataCadastro() { return dataCadastro; }
     public void setDataCadastro(LocalDate dataCadastro) { this.dataCadastro = dataCadastro; }
+
+    public Cargo getCargo() { return cargo; }
+    public void setCargo(Cargo cargo) { this.cargo = cargo; }
 }
