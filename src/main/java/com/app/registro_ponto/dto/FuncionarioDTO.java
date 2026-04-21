@@ -5,6 +5,7 @@ public class FuncionarioDTO {
     private String nome;
     private String turno;
     private Integer cargaHorariaSemanal;
+    private Long cargoId;
     private String senha;
 
     public String getMatricula() { return matricula; }
@@ -18,6 +19,9 @@ public class FuncionarioDTO {
 
     public Integer getCargaHorariaSemanal() { return cargaHorariaSemanal; }
     public void setCargaHorariaSemanal(Integer cargaHorariaSemanal) { this.cargaHorariaSemanal = cargaHorariaSemanal; }
+
+    public Long getCargoId() { return cargoId; }
+    public void setCargoId(Long cargoId) { this.cargoId = cargoId; }
 
     public String getSenha() { return senha; }
     public void setSenha(String senha) { this.senha = senha; }

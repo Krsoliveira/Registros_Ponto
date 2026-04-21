@@ -1,8 +1,10 @@
 package com.app.registro_ponto.servico;
 
 import com.app.registro_ponto.dto.FuncionarioDTO;
+import com.app.registro_ponto.modelo.Cargo;
 import com.app.registro_ponto.modelo.Funcionario;
 import com.app.registro_ponto.modelo.Usuario;
+import com.app.registro_ponto.repositorio.CargoRepositorio;
 import com.app.registro_ponto.repositorio.FuncionarioRepositorio;
 import com.app.registro_ponto.repositorio.UsuarioRepositorio;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -15,13 +17,16 @@ import java.util.List;
 public class FuncionarioServico {
 
     private final FuncionarioRepositorio funcionarioRepositorio;
+    private final CargoRepositorio cargoRepositorio;
     private final UsuarioRepositorio usuarioRepositorio;
     private final PasswordEncoder passwordEncoder;
 
     public FuncionarioServico(FuncionarioRepositorio funcionarioRepositorio,
+                               CargoRepositorio cargoRepositorio,
                                UsuarioRepositorio usuarioRepositorio,
                                PasswordEncoder passwordEncoder) {
         this.funcionarioRepositorio = funcionarioRepositorio;
+        this.cargoRepositorio = cargoRepositorio;
         this.usuarioRepositorio = usuarioRepositorio;
         this.passwordEncoder = passwordEncoder;
     }
@@ -40,6 +45,13 @@ public class FuncionarioServico {
         f.setNome(dto.getNome());
         f.setTurno(dto.getTurno() != null && !dto.getTurno().isBlank() ? dto.getTurno() : "Comercial");
         f.setCargaHorariaSemanal(dto.getCargaHorariaSemanal() != null ? dto.getCargaHorariaSemanal() : 44);
+        if (dto.getCargoId() != null) {
+            Cargo cargo = cargoRepositorio.findById(dto.getCargoId())
+                    .orElseThrow(() -> new IllegalArgumentException("Cargo não encontrado."));
+            f.setCargo(cargo);
+        } else {
+            f.setCargo(null);
+        }
         f = funcionarioRepositorio.save(f);
 
         // Cria conta de usuário: login = matrícula, senha padrão = matrícula (ou a fornecida)
@@ -57,7 +69,7 @@ public class FuncionarioServico {
     }
 
     public List<Funcionario> listarTodos() {
-        return funcionarioRepositorio.findAll();
+        return funcionarioRepositorio.findAllComCargo();
     }
 
     public Funcionario buscarPorMatricula(String matricula) {
