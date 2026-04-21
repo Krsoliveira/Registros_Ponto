@@ -46,15 +46,25 @@ public class RegistroPontoControlador {
 
     @GetMapping("/resumo")
     public ResponseEntity<ResumoDTO> resumo(@AuthenticationPrincipal Usuario usuario,
-                                             @RequestParam(defaultValue = "week") String filtro) {
+                                             @RequestParam(defaultValue = "week") String filtro,
+                                             @RequestParam(required = false) String matricula) {
         LocalDateTime fim    = LocalDateTime.now();
         LocalDateTime inicio = filtro.equalsIgnoreCase("month")
                 ? fim.with(TemporalAdjusters.firstDayOfMonth()).with(LocalTime.MIN)
                 : fim.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY)).with(LocalTime.MIN);
 
-        String matricula = resolverMatricula(usuario);
-        double saldo     = bancoHorasServico.getSaldoAtual(matricula);
-        return ResponseEntity.ok(registroPontoServico.gerarResumo(matricula, inicio, fim, saldo));
+        String matriculaAlvo;
+        if (usuario.getPerfil() == Usuario.Perfil.ADMIN) {
+            if (matricula == null || matricula.isBlank()) {
+                throw new IllegalArgumentException("Informe a matrícula do funcionário.");
+            }
+            matriculaAlvo = matricula.trim();
+        } else {
+            matriculaAlvo = resolverMatricula(usuario);
+        }
+
+        double saldo = bancoHorasServico.getSaldoAtual(matriculaAlvo);
+        return ResponseEntity.ok(registroPontoServico.gerarResumo(matriculaAlvo, inicio, fim, saldo));
     }
 
     private String resolverMatricula(Usuario usuario) {

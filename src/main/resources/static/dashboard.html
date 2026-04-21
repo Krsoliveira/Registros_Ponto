@@ -286,8 +286,8 @@
                 <form id="formRelatorio">
                     <div class="field-row relatorio-row">
                         <div class="field-group admin-only">
-                            <label>Matrícula (admin: deixe vazio para seus dados)</label>
-                            <input type="text" id="r-matricula" placeholder="Matrícula do funcionário">
+                            <label>Matrícula do funcionário</label>
+                            <input type="text" id="r-matricula" placeholder="Ex: 12345" autocomplete="off">
                         </div>
                         <div class="field-group">
                             <label>Período</label>
@@ -301,6 +301,7 @@
                             <button type="submit" class="btn-full">Buscar</button>
                         </div>
                     </div>
+                    <div id="relatorioMsg" class="ponto-msg" style="display:none; margin-top:12px;"></div>
                 </form>
 
                 <div id="relatorioResult" style="display:none; margin-top:20px;">
